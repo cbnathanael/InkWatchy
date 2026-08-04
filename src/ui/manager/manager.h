@@ -16,6 +16,7 @@ typedef enum
     batteryDebug,
     motorDebug,
     wifiDebug,
+    gadgetbridgeDebug,
     gitDebug,
     accDebug,
     weatherMenu,             // Weather main menu
@@ -219,6 +220,9 @@ void switchBluetoothHostScanner();
 #if BLE_PERIPHERAL
 void switchBlePeripheral();
 void switchBlePeripheralMenu();
+#endif
+#if GADGETBRIDGE_ENABLED
+void switchGadgetbridgeDebug();
 #endif
 #if FONT_MENU_ENABLED
 void switchFontsPreview();

@@ -163,6 +163,11 @@ void initSettingsMenu()
         count = count + 1;
         buttons[count] = {MENU_WIFI, "wifiIcon", switchWifiDebug};
     }
+    {
+        debugLog("Adding gadgetbridge to menu");
+        count = count + 1;
+        buttons[count] = {"Gadgetbridge", "blueIcon", switchGadgetbridgeDebug};
+    }
 #if DEBUG_MENUS
     {
         count = count + 1;

@@ -133,6 +133,14 @@ void saveRTC(tmElements_t timeToSave)
 #endif
 }
 
+void setRTCTimeUnix(time_t epoch)
+{
+  dontTouchTimeZone = true;
+  rM.SRTC.doBreakTime(epoch, timeRTCUTC0);
+  saveRTC(timeRTCUTC0);
+  dontTouchTimeZone = false;
+}
+
 tmElements_t convertToTmElements(const struct tm &tmStruct)
 {
   tmElements_t elements;
@@ -431,7 +439,7 @@ void manageRTC()
   if (newSec != manageRtcLastSec)
   {
     manageRtcLastSec = newSec;
-    debugLog("getCurrentSeconds(): " + String(getCurrentSeconds()));
+    //debugLog("getCurrentSeconds(): " + String(getCurrentSeconds()));
     if (manageRtcLastSec <= 1 || getLastTimeReadSec() >= 60)
     {
       debugLog("RTC new minute");

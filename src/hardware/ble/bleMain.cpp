@@ -138,7 +138,17 @@ void initBle()
 {
     debugLog("Init ble called");
     bleClientConnected = false;
-    BLEDevice::init("InkWatchy");
+    BLEDevice::init(BLE_NAME);
+    BLEDevice::setPower(getBlePower());
+    pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new bleServerCallbacks());
+}
+
+void initBle(String name)
+{
+    debugLog("Init ble called with modified name");
+    bleClientConnected = false;
+    BLEDevice::init(name);
     BLEDevice::setPower(getBlePower());
     pServer = BLEDevice::createServer();
     pServer->setCallbacks(new bleServerCallbacks());

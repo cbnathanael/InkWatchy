@@ -14,9 +14,13 @@ extern BLEServer *pServer;
 extern BLEService *bleService;
 
 void initBle();
+void initBle(String name);
 void startBle();
 void exitBle();
 void cleanupBleDevice(); // For use with other ble implementation that don't use exitBle
+
+void enableBonding();
+void removeBondedDevices();
 #endif
 
 #if BLE_HOST_ENABLED

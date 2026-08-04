@@ -19,6 +19,7 @@ void saveRTC(tmElements_t timeToSave);
 void readRTC();
 void wakeUpManageRTC();
 void manageRTC();
+void setRTCTimeUnix(time_t epoch);
 
 void setupMillisComparators();
 

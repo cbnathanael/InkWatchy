@@ -246,6 +246,10 @@ RTC_DATA_ATTR rtcMem rM = {
     .pomodoroWorkNow = false,
 #endif
 #endif
+#if GADGETBRIDGE_ENABLED
+    .ble_connection_attempts = 3,
+    .ble_passkey = 0,
+#endif
 };
 
 #if RTC_MEMORY_BACKUP

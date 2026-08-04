@@ -221,6 +221,10 @@ struct rtcMem
     bool pomodoroWorkNow : 1;
 #endif
 #endif
+#if GADGETBRIDGE_ENABLED
+    uint8_t ble_connection_attempts : 3;
+    uint32_t ble_passkey : 16;
+#endif
 };
 
 extern rtcMem rM;

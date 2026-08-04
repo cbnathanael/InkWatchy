@@ -344,6 +344,7 @@ The default is this:
 // If PANIC happens with this enabled, turn it off, check again
 // If it works without it, disable other things (snake, bitcoin etc.)
 #define BLE_ENABLED 0 // Ble in general
+#define BLE_ADVERTISE_TIME 10 // Seconds to block sleep after advertising
 #define BLE_NAME "InkWatchy"
 
 // For keyboard for example

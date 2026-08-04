@@ -166,6 +166,9 @@ extern uint16_t SCWhite;
 #include "../ui/places/accDebug/accDebug.h"
 #include "../ui/places/motorDebug/motorDebug.h"
 #endif
+#if GADGETBRIDGE_ENABLED
+#include "../ui/places/gadgetbridgeDebug/gadgetbridgeDebug.h"
+#endif
 #include "../ui/places/watchfaceSelector/watchfaceSel.h"
 #include "../ui/places/powerSettings/powerSettings.h"
 #if BOOK
@@ -290,6 +293,9 @@ extern uint16_t SCWhite;
 #endif
 #if BLE_PERIPHERAL
 #include "../ui/places/blePeripheral/blePeripheral.h"
+#endif
+#if GADGETBRIDGE_ENABLED
+#include "../network/ble/gadgetbridge/gadgetbridge.h"
 #endif
 #include "../ui/places/errorScreen/errorScreen.h"
 #if SET_CLOCK_GUI

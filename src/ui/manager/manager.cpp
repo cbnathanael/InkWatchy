@@ -260,6 +260,13 @@ void loopManager()
         managerLaunchFunc(wifiDebug, initWifiDebugDisplay, loopWifiDebugDisplay, slintExit);
         break;
     }
+#if GADGETBRIDGE_ENABLED
+    case gadgetbridgeDebug:
+    {
+        managerLaunchFunc(gadgetbridgeDebug, initGBDebugDisplay, loopGBDebugDisplay, slintExit);
+        break;
+    }
+#endif
     case textDialog:
     {
         managerLaunchFunc(textDialog, NULL, slint_loop, slintExit);
