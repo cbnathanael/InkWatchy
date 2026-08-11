@@ -49,6 +49,11 @@ wfModule *wfModulesList[MODULE_COUNT] = {
 #else
     &wfEmpty,
 #endif
+#if GADGETBRIDGE_MODULE && GADGETBRIDGE_ENABLED
+    &rM.gadgetbridgeModule,
+#else
+    &wfEmpty,
+#endif
 };
 
 void clearModuleArea()

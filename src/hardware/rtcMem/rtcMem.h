@@ -223,7 +223,13 @@ struct rtcMem
 #endif
 #if GADGETBRIDGE_ENABLED
     uint8_t ble_connection_attempts : 3;
-    uint32_t ble_passkey : 16;
+    uint32_t ble_passkey;
+#if GADGETBRIDGE_MODULE
+    wfModule gadgetbridgeModule;
+#endif
+#endif
+#if NOTIFICATIONS
+    NotificationMem notificationCurrent;
 #endif
 };
 

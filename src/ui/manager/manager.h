@@ -17,6 +17,7 @@ typedef enum
     motorDebug,
     wifiDebug,
     gadgetbridgeDebug,
+    notificationDisplay,
     gitDebug,
     accDebug,
     weatherMenu,             // Weather main menu
@@ -223,6 +224,7 @@ void switchBlePeripheralMenu();
 #endif
 #if GADGETBRIDGE_ENABLED
 void switchGadgetbridgeDebug();
+void switchNotificationDisplay();
 #endif
 #if FONT_MENU_ENABLED
 void switchFontsPreview();

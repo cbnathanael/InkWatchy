@@ -4,8 +4,11 @@
 
 #if GADGETBRIDGE_ENABLED
 
+
 void gadgetbridgeInit();
 void notify(JsonDocument doc);
-bool gadgetBridgeHijackSleep();
-
+bool gadgetbridgeNoSleep();
+void initGBNotificationDisp();
+void loopGBNotificationDisp();
+void exitGBNotificationDisp();
 #endif

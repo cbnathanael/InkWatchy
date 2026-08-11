@@ -1,5 +1,6 @@
 #include "gadgetbridge.h"
 #include "rtcMem.h"
+#include "BLE2902.h"
 
 #if GADGETBRIDGE_ENABLED
 
@@ -12,19 +13,26 @@ void notify(JsonDocument doc)
   jsonBuffer = "\r\n" + jsonBuffer + "\r\n";
   debugLog("Sending notification: " + jsonBuffer);
   txHandle->setValue(jsonBuffer);
-  txHandle->notify();
+  txHandle->notify(true);
 }
 
 class gadgetbridgeServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
   {
-    debugLog("BLE client connected");
+    debugLog("GADGETBRIDGE BLE client connected");
     bleClientConnected = true;
 
     BLEDevice::getAdvertising()->stop();
     rM.ble_connection_attempts = 0;
-    resetSleepDelay();
+    JsonDocument doc;
+    // send battery level
+    doc["t"] = "status";
+    doc["bat"] = rM.bat.percentage;
+    doc["volt"] = rM.bat.curV;
+    doc["chg"] = rM.bat.isCharging ? 1 : 0;
+    notify(doc);
+    //resetSleepDelay();
   }
   void onDisconnect(BLEServer *pServer)
   {
@@ -123,26 +131,61 @@ class rxCallback : public BLECharacteristicCallbacks
     debugLog("Received GB command: " + jsonContent);
 
     // // Example: Use ArduinoJson to parse the content
-    // JsonDocument doc;
-    // DeserializationError error = deserializeJson(doc, jsonContent);
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, jsonContent);
 
-    // if (!error)
-    // {
-    //   // Process the command based on its type
-    //   if (doc.containsKey("t"))
-    //   {
-    //     String type = doc["t"];
+    if (!error)
+    {
+      // Process the command based on its type
+      if (doc.containsKey("t"))
+      {
+        String type = doc["t"];
+        if (type.startsWith("notify") || type.startsWith("call"))
+        {
+          debugLog("GADGETBRIDGE: Make Notification");
+          
+          Notification *notif = new Notification();
+          debugLog("GADGETBRIDGE: Get Time");
+          int ts = simplifyUnix(getUnixTime(timeRTCLocal));
+          debugLog("GADGETBRIDGE: Start setting notification values");
+          notif->timestamp = ts;
+          if (type.startsWith("notify"))
+          {
+            if (type.endsWith("-"))
+            {
+              // remove the notification
+            }
+            else if (type.endsWith("~"))
+            {
+              // modify the notification
+            }
+            else
+            {
+              notif->id = (doc.containsKey("id") && !String(doc["id"]).isEmpty()) ? doc["id"] : ts;
+              notif->src = (doc.containsKey("src") && !String(doc["id"]).isEmpty()) ? String(doc["src"]) : "n/a";
+              notif->title = (doc.containsKey("title") && !String(doc["id"]).isEmpty()) ? String(doc["title"]) : "n/a";
+              notif->body = (doc.containsKey("body") && !String(doc["id"]).isEmpty()) ? String(doc["body"]) : "n/a";
+            }
+          }
+          else if (type.startsWith("call"))
+          {
+            notif->id = doc.containsKey("id") ? doc["id"] : ts;
+            notif->src = "Incoming Call";
+            notif->title = doc.containsKey("name") ? String(doc["name"]) : "Unknown Caller";
+            notif->body = doc.containsKey("number") ? String(doc["number"]) : "Unknown Number";
+          }
+#if NOTIFICATIONS
+          // don't annoy with blank messages
+          if (notif->src.isEmpty() && notif->body.isEmpty() && notif->title.isEmpty())
+            return;
 
-    //     if (type == "notify")
-    //     {
-    //       // Handle notification
-    //       String title = doc["title"];
-    //       String body = doc["body"];
-    //       // Show notification on watch
-    //     }
-    //     // Handle other command types...
-    //   }
-    // }
+          debugLog("GADGETBRIDGE: Send to Notifications");
+          addNotification(notif, true);
+          switchNotificationDisplay();
+#endif
+        }
+      }
+    }
   }
 };
 
@@ -172,43 +215,39 @@ void gadgetbridgeInit()
   const char *NUS_RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
   const char *NUS_TX_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
 
-  debugLog("Init Gadgetbridge called");
+  debugLog("GADGETBRIDGE INIT called");
 
   nvsInit();
 
   initBle("Bangle.js InkWatchy"); // Bangle.js prefix is important for the Gadgetbridge app
   pServer->setCallbacks(new gadgetbridgeServerCallbacks());
 
-  //don't do this here.
-  //enableBonding();
-
   bleService = pServer->createService(NUS_UUID); // NUS server ID
-  {
-    BLECharacteristic *pCharacteristic = bleService->createCharacteristic(
+    BLECharacteristic *pRxCharacteristic = bleService->createCharacteristic(
         NUS_RX_UUID,
         BLECharacteristic::PROPERTY_WRITE);
-    pCharacteristic->setCallbacks(new rxCallback());
-    pCharacteristic->setAccessPermissions(ESP_GATT_PERM_WRITE_ENC_MITM);
-  }
-
-  {
-    BLECharacteristic *pCharacteristic = bleService->createCharacteristic(
+    pRxCharacteristic->setCallbacks(new rxCallback());
+    pRxCharacteristic->setAccessPermissions(ESP_GATT_PERM_WRITE_ENC_MITM);
+  
+    BLECharacteristic *pTxCharacteristic = bleService->createCharacteristic(
         NUS_TX_UUID,
         BLECharacteristic::PROPERTY_NOTIFY);
-    pCharacteristic->setAccessPermissions(ESP_GATT_PERM_READ_ENC_MITM);
+        pTxCharacteristic->addDescriptor(new BLE2902());
+    pTxCharacteristic->setAccessPermissions(ESP_GATT_PERM_READ_ENC_MITM);
 
-    txHandle = pCharacteristic;
-  }
+    txHandle = pTxCharacteristic;
+  
 
   startBle();
 }
 
-// False if we want regular sleep
-bool gadgetBridgeHijackSleep()
+// return false
+bool gadgetbridgeNoSleep()
 {
-  // Note: I yeeted minutes == 1 && from here, because the user should decide if he wants gadgetbridge to run or not (from gui later), we can't just randomly turn it off
-  if ((GADGETBRIDGE_MAX_RECONNECTS == 0 || rM.ble_connection_attempts <= GADGETBRIDGE_MAX_RECONNECTS))
+  if (!bleClientConnected && GADGETBRIDGE_SYNC_SLEEP_TIME_ENABLED && (GADGETBRIDGE_MAX_RECONNECTS == 0 || rM.ble_connection_attempts <= GADGETBRIDGE_MAX_RECONNECTS))
   {
+    debugLog("GADGETBRIDGE No Sleep True");
+    rM.ble_connection_attempts++;
     esp_sleep_enable_timer_wakeup(GADGETBRIDGE_SYNC_SLEEP_TIME * 1000 * 1000); // convert to microseconds
     return true;
   }

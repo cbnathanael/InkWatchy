@@ -3,7 +3,7 @@
 #include "defines.h"
 
 // Make sure this number is right, otherwise bad things will happen...
-#define MODULE_COUNT 8
+#define MODULE_COUNT 9
 
 extern wfModule wfEmpty;
 

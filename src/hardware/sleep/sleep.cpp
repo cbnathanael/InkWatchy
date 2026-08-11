@@ -97,6 +97,7 @@ void goSleep()
     //     debugLog("Waiting for motor task");
     //     delayTask(25);
     // }
+
 #if ATCHY_VER == YATCHY && LP_CORE == true && YATCHY_SHIPPING_MODE == 0
     String lpcoreFile = selectLpCoreFile();
 #if HYBRID_LP_CORE == 0
@@ -106,7 +107,9 @@ void goSleep()
         {
             debugLog("Fallback default lpcore");
             lpcoreFile = LP_CORE_FILE_DEFAULT;
-        } else {
+        }
+        else
+        {
             // No button input here, this is absolutely last case resort.
             showErrorOnScreen("CRITICAL. HYBRID_LP_CORE is 0 and no lpcore file found");
             resetSleepDelay();
@@ -154,7 +157,6 @@ void goSleep()
 #else
     wakeUpManageRTC();
 #endif
-
 #if RTC_MEMORY_BACKUP
     unsigned char tmpHash[16];
     mbedtls_md5((unsigned char *)&rM, sizeof(rtcMem), tmpHash);
@@ -195,6 +197,10 @@ void goSleep()
     LittleFS.end();
     // Not needed since small rtc 2.3.7
     // esp_err_t ext0Err = esp_sleep_enable_ext0_wakeup((gpio_num_t)RTC_INT_PIN, 0);
+
+#if GADGETBRIDGE_ENABLED
+    exitBle();
+#endif
 #if DISABLE_WAKEUP_INTERRUPTS == false || DEBUG == false
 #if ATCHY_VER != YATCHY
     esp_err_t ext1Err = esp_sleep_enable_ext1_wakeup(pinToMask(UP_PIN) | pinToMask(DOWN_PIN) | pinToMask(MENU_PIN) | pinToMask(BACK_PIN), EXT1_WAKEUP_STATE);
@@ -359,7 +365,6 @@ void manageSleep()
                 return;
             }
 #endif
-
             uint currentSeconds = getCurrentSeconds();
             if (currentSeconds > (60 - AVOID_SLEEPING_ON_FULL_MINUTE) || rM.wFTime.Minute != timeRTCLocal.Minute)
             {
@@ -388,7 +393,13 @@ void manageSleep()
             debugLog("Battery voltage before sleep: " + String(BatteryRead()));
             debugLog("Gpio expander stat in pin state: " + BOOL_STR(rM.gpioExpander.digitalRead(MCP_STAT_IN)));
 #endif
-
+#if GADGETBRIDGE_ENABLED
+            if (gadgetbridgeNoSleep() == false)
+            {
+                resetSleepDelay();
+                return;
+            }
+#endif
 #if DEBUG && DISABLE_SLEEP_PARTIAL
             debugLog("DISABLE_SLEEP_PARTIAL enabled, avoiding sleep");
             resetSleepDelay();

@@ -53,7 +53,9 @@ void setup()
 #if INK_ALARMS
   checkAlarms();
 #endif
-
+#if NOTIFICATIONS
+  initNotifications();
+#endif
 #if GADGETBRIDGE_ENABLED
   gadgetbridgeInit();
 #endif

@@ -247,8 +247,18 @@ RTC_DATA_ATTR rtcMem rM = {
 #endif
 #endif
 #if GADGETBRIDGE_ENABLED
-    .ble_connection_attempts = 3,
+    .ble_connection_attempts = 0,
     .ble_passkey = 0,
+#if GADGETBRIDGE_MODULE
+    .gadgetbridgeModule = {
+        true,
+        wfGbridgeCheckShow,
+        wfGbridgeRequestShow
+    },
+#endif
+#endif
+#if NOTIFICATIONS
+    .notificationCurrent = {0},
 #endif
 };
 

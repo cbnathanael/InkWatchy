@@ -81,6 +81,11 @@ void switchGadgetbridgeDebug()
     generalSwitch(gadgetbridgeDebug);
 }
 
+void switchNotificationDisplay()
+{
+    generalSwitch(notificationDisplay);
+}
+
 void switchGitDebug()
 {
     generalSwitch(gitDebug);

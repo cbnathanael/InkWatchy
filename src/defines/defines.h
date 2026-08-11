@@ -168,6 +168,7 @@ extern uint16_t SCWhite;
 #endif
 #if GADGETBRIDGE_ENABLED
 #include "../ui/places/gadgetbridgeDebug/gadgetbridgeDebug.h"
+#include "../ui/places/notifications/notifications.h"
 #endif
 #include "../ui/places/watchfaceSelector/watchfaceSel.h"
 #include "../ui/places/powerSettings/powerSettings.h"
@@ -245,6 +246,9 @@ extern uint16_t SCWhite;
 #if ALARM_MODULE && INK_ALARMS
 #include "../ui/watchfaceModules/alarmMod/alarmMod.h"
 #endif
+#if GADGETBRIDGE_MODULE && GADGETBRIDGE_ENABLED
+#include "../ui/watchfaceModules/gadgetbridgeMod/gadgetbridgeMod.h"
+#endif
 #if WATCHFACE_INKFIELD_SZYBET
 #include "../ui/watchface/watchfaces/inkField_Szybet/inkField.h"
 #endif
@@ -293,6 +297,9 @@ extern uint16_t SCWhite;
 #endif
 #if BLE_PERIPHERAL
 #include "../ui/places/blePeripheral/blePeripheral.h"
+#endif
+#if NOTIFICATIONS
+#include "../ui/places/notifications/notifications.h"
 #endif
 #if GADGETBRIDGE_ENABLED
 #include "../network/ble/gadgetbridge/gadgetbridge.h"

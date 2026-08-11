@@ -1,0 +1,410 @@
+#include "notifications.h"
+#include "rtcMem.h"
+
+#if NOTIFICATIONS
+static NotifList *notifications;
+
+
+
+NotifNode *createNode(Notification *data)
+{
+  debugLog("NOTIFICATION: createNode entered");
+  NotifNode *newNode = {};//(NotifNode *)malloc(sizeof(NotifNode));
+  // if (newNode == NULL)
+  // {
+  //   debugLog("NOTIFICATION: createNote NULL");
+  //   return NULL;
+  // }
+  newNode->data = data;
+  newNode->next = NULL;
+  debugLog("NOTIFICATION: createNode success");
+  return newNode;
+}
+
+/**
+ * Insert a new node at the beginning of the list
+ *
+ * @param list Pointer to the linked list
+ * @param data The integer data to insert
+ * @return true if insertion successful, false if memory allocation fails
+ *
+ * Time Complexity: O(1)
+ * Space Complexity: O(1)
+ */
+bool insertAtBeginning(Notification* data)
+{
+  debugLog("NOTIFICATION: insertAtBeginning entered");
+  NotifNode *newNode = createNode(data);
+  if (newNode == NULL)
+  {
+    debugLog("NOTIFICATION: insertAtBeginning newNode failed");
+    return false;
+  }
+
+  newNode->next = notifications->head;
+  debugLog("NOTIFICATION: insertAtBeginning set next->head");
+  notifications->head = newNode;
+  debugLog("NOTIFICATION: insertAtBeginning set newNode as head");
+  notifications->size++;
+  debugLog("NOTIFICATION: insertAtBeginning successful");
+  return true;
+}
+
+/**
+ * Insert a new node at the end of the list
+ *
+ * @param list Pointer to the linked list
+ * @param data The integer data to insert
+ * @return true if insertion successful, false if memory allocation fails
+ *
+ * Time Complexity: O(n)
+ * Space Complexity: O(1)
+ */
+bool insertAtEnd(Notification* data)
+{
+  NotifNode *newNode = createNode(data);
+  if (newNode == NULL)
+  {
+    return false;
+  }
+
+  if (notifications->head == NULL)
+  {
+    notifications->head = newNode;
+  }
+  else
+  {
+    NotifNode *current = notifications->head;
+    while (current->next != NULL)
+    {
+      current = current->next;
+    }
+    current->next = newNode;
+  }
+  notifications->size++;
+  return true;
+}
+
+
+/**
+ * Delete the first node in the list
+ *
+ * @param list Pointer to the linked list
+ * @return true if deletion successful, false if list is empty
+ *
+ * Time Complexity: O(1)
+ * Space Complexity: O(1)
+ */
+bool deleteFromBeginning(NotifList *list)
+{
+  if (list->head == NULL)
+  {
+    return false;
+  }
+
+  NotifNode *temp = list->head;
+  list->head = list->head->next;
+  free(temp);
+  list->size--;
+  return true;
+}
+
+/**
+ * Delete the last node in the list
+ *
+ * @param list Pointer to the linked list
+ * @return true if deletion successful, false if list is empty
+ *
+ * Time Complexity: O(n)
+ * Space Complexity: O(1)
+ */
+bool deleteFromEnd(NotifList *list)
+{
+  if (list->head == NULL)
+  {
+    return false;
+  }
+
+  if (list->head->next == NULL)
+  {
+    free(list->head);
+    list->head = NULL;
+    list->size--;
+    return true;
+  }
+
+  NotifNode *current = list->head;
+  while (current->next->next != NULL)
+  {
+    current = current->next;
+  }
+
+  free(current->next);
+  current->next = NULL;
+  list->size--;
+  return true;
+}
+
+/**
+ * Delete the node at the specified position
+ *
+ * @param list Pointer to the linked list
+ * @param position The position of the node to delete (0-based)
+ * @return true if deletion successful, false if invalid position
+ *
+ * Time Complexity: O(n)
+ * Space Complexity: O(1)
+ */
+bool deleteAtPosition(NotifList *list, size_t position)
+{
+  if (list->head == NULL || position >= list->size)
+  {
+    return false;
+  }
+
+  if (position == 0)
+  {
+    return deleteFromBeginning(list);
+  }
+
+  NotifNode *current = list->head;
+  for (size_t i = 0; i < position - 1; i++)
+  {
+    current = current->next;
+  }
+
+  NotifNode *temp = current->next;
+  current->next = temp->next;
+  free(temp);
+  list->size--;
+  return true;
+}
+
+/**
+ * Search for a value in the list
+ *
+ * @param list Pointer to the linked list
+ * @param value The value to search for
+ * @return The position of the first occurrence (0-based), or -1 if not found
+ *
+ * Time Complexity: O(n)
+ * Space Complexity: O(1)
+ */
+// int search(NotifList *list, int value)
+// {
+//   NotifNode *current = list->head;
+//   int position = 0;
+
+//   while (current != NULL)
+//   {
+//     if (current->data.id == value)
+//     {
+//       return position;
+//     }
+//     current = current->next;
+//     position++;
+//   }
+
+//   return -1;
+// }
+
+void addNotification(Notification *n, bool addToFs)
+{
+  debugLog("NOTIFICATIONS: addNotification entered");
+  if (n->timestamp == 0)
+    n->timestamp = simplifyUnix(getUnixTime(timeRTCLocal));
+  if (n->id == 0)
+    n->id = n->timestamp; // sketchy, but should be unique enough for our purposes
+  debugLog("NOTIFICATIONS: updated timestamp/id");
+  if(addToFs) {
+    if (fsSetBlob(String(n->id), (uint8_t *)n, sizeof(Notification), String(NOTIFICATIONS_DIR) + "/") == false)
+    {
+      debugLog("NOTIFICATIONS: Saving notification failed");
+    }
+  }
+  debugLog("NOTIFICATIONS: Saved to FS and adding to List");
+  if(!insertAtBeginning(n))
+  {
+    debugLog("NOTIFICATIONS: failure from insertAtBeginning");
+  }
+  
+  //set truncated detail of latest notification to rtcmem
+  NotificationMem notMem = {0};
+  debugLog("NOTIFICATIONS: created notMem");
+  n->title.toCharArray(notMem.title, 32);
+  n->src.toCharArray(notMem.src, 16);
+  debugLog("NOTIFICATIONS: truncated title/src and added to notMem");
+  rM.notificationCurrent = notMem;
+  debugLog("NOTIFICATIONS: stored notMem to rM");
+}
+void initNotifications()
+{
+  // removeDir(NOTIFICATIONS_DIR);
+  fsCreateDir(NOTIFICATIONS_DIR);
+
+  NotifList *notifications = (NotifList *)malloc(sizeof(NotifList));
+  if (notifications == NULL)
+  {
+    debugLog("Notifcation List creation failed");
+  }
+  notifications->head = NULL;
+  notifications->size = 0;
+
+  // Load notifications from fs
+  if (fsSetup() == false)
+  {
+    return;
+  }
+
+  File root = LittleFS.open(NOTIFICATIONS_DIR);
+  if (root)
+  {
+    File file = root.openNextFile();
+    int fileCount = 1;
+    while (file)
+    {
+      debugLog("NOTIFICATIONS: opening file #"+String(fileCount));
+      if (file.isDirectory() == false)
+      {
+        String id = String(file.name());
+        bufSize nBuf = fsGetBlob(id, String(NOTIFICATIONS_DIR) + "/");
+        if (nBuf.size != sizeof(Notification))
+        {
+          debugLog("Bad notification data: " + id);
+          free(nBuf.buf);
+        }
+        Notification *nData = {0};
+        memcpy(&nData, nBuf.buf, nBuf.size);
+        addNotification(nData, false);
+        debugLog("NOTIFICATIONS: returned from addNotification");
+      }
+      file.close();
+      debugLog("NOTIFICATIONS: file.close");
+      file = root.openNextFile();
+      debugLog("NOTIFICATIONS: root.openNextFile");
+      fileCount++;
+    }
+  }
+}
+// /**
+//  * Reverse the linked list in-place
+//  *
+//  * @param list Pointer to the linked list
+//  *
+//  * Time Complexity: O(n)
+//  * Space Complexity: O(1)
+//  */
+// void reverse(NotifList* list) {
+//     Node *prev = NULL, *current = list->head, *next = NULL;
+
+//     while (current != NULL) {
+//         next = current->next;
+//         current->next = prev;
+//         prev = current;
+//         current = next;
+//     }
+
+//     list->head = prev;
+// }
+
+// /**
+//  * Get the middle node's data
+//  *
+//  * @param list Pointer to the linked list
+//  * @return The middle node's data, or -1 if list is empty
+//  *
+//  * Time Complexity: O(n/2)
+//  * Space Complexity: O(1)
+//  */
+// int getMiddle(NotifList* list) {
+//     if (list->head == NULL) {
+//         return -1;
+//     }
+
+//     Node *slow = list->head, *fast = list->head;
+
+//     while (fast->next != NULL && fast->next->next != NULL) {
+//         slow = slow->next;
+//         fast = fast->next->next;
+//     }
+
+//     return slow->data;
+// }
+
+// /**
+//  * Check if the list contains a cycle
+//  *
+//  * @param list Pointer to the linked list
+//  * @return true if cycle exists, false otherwise
+//  *
+//  * Time Complexity: O(n)
+//  * Space Complexity: O(1)
+//  */
+// bool hasCycle(NotifList* list) {
+//     if (list->head == NULL) {
+//         return false;
+//     }
+
+//     Node *slow = list->head, *fast = list->head;
+
+//     while (fast != NULL && fast->next != NULL) {
+//         slow = slow->next;
+//         fast = fast->next->next;
+//         if (slow == fast) {
+//             return true;
+//         }
+//     }
+
+//     return false;
+// }
+
+/**
+ * Display all elements in the list
+ *
+ * @param list Pointer to the linked list
+ *
+ * Time Complexity: O(n)
+ * Space Complexity: O(1)
+ */
+void display(NotifList *list)
+{
+  NotifNode *current = list->head;
+
+  if (current == NULL)
+  {
+    printf("Empty List\n");
+    return;
+  }
+
+  while (current != NULL)
+  {
+    printf("%d", current->data);
+    if (current->next != NULL)
+    {
+      printf(" -> ");
+    }
+    current = current->next;
+  }
+  printf("\n");
+}
+
+/**
+ * Free all memory used by the list
+ *
+ * @param list Pointer to the linked list
+ *
+ * Time Complexity: O(n)
+ * Space Complexity: O(1)
+ */
+void destroyList(NotifList *list)
+{
+  NotifNode *current = list->head;
+  while (current != NULL)
+  {
+    NotifNode *next = current->next;
+    free(current);
+    current = next;
+  }
+  free(list);
+}
+#endif

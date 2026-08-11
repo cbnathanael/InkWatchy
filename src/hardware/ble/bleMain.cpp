@@ -159,6 +159,7 @@ void startBle()
     bleService->start();
     pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->start();
+    debugLog("Start BLE");
 }
 
 void exitBle()

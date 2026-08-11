@@ -284,6 +284,8 @@ The default is this:
 
 #define ALARM_MODULE 1 // Needs alarm enabled
 
+#define GADGETBRIDGE_MODULE 0 // Needs gadgetbridge enabled
+
 // Power savings
 #define NIGHT_SLEEP_FOR_M 45 // If it's 1 it doesn't apply, In minutes
 #define NIGHT_SLEEP_AFTER_HOUR 23
